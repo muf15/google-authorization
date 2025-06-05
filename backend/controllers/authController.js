@@ -42,10 +42,17 @@ const googleLogin = async (req, res) => {
       expiresIn: process.env.JWT_TIMEOUT,
     });
 
+    // Set cookie instead of sending token in response body
+    res.cookie('token', token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // true in production
+      sameSite: 'strict',
+      maxAge: 24 * 60 * 60 * 1000 // 24 hours
+    });
+
     return res.status(200).json({
       success: true,
       message: "Login successful",
-      token,
       user: {
         _id: user._id,
         name: user.name,
@@ -63,6 +70,39 @@ const googleLogin = async (req, res) => {
   }
 };
 
+const getMe = async (req, res) => {
+  try {
+    // Assumes you have middleware that adds user to req
+    const user = req.user;
+    
+    return res.status(200).json({
+      success: true,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        image: user.image,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: "Error fetching user data",
+      error: error.message,
+    });
+  }
+};
+
+const logout = async (req, res) => {
+  res.clearCookie('token');
+  return res.status(200).json({
+    success: true,
+    message: "Logged out successfully"
+  });
+};
+
 module.exports = {
   googleLogin,
+  getMe,
+  logout
 };

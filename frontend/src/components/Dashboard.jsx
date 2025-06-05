@@ -1,23 +1,37 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { api } from "../api";
 
 export default function Dashboard() {
   const [user, setUser] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const userData = localStorage.getItem("user");
-    if (!userData) {
-      navigate("/login");
-      return;
-    }
-    setUser(JSON.parse(userData));
+    const fetchUser = async () => {
+      try {
+        const response = await api.get("/auth/me");
+        if (response.data.success) {
+          setUser(response.data.user);
+        } else {
+          navigate("/login");
+        }
+      } catch (error) {
+        console.error("Error fetching user:", error);
+        navigate("/login");
+      }
+    };
+
+    fetchUser();
   }, [navigate]);
 
-  const handleLogout = () => {    
-    localStorage.removeItem("user");
-    localStorage.removeItem("token");
-    navigate("/login");
+  const handleLogout = async () => {
+    try {
+      // Add a logout API call here that clears the cookie
+      await api.post("/auth/logout");
+      navigate("/login");
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
   };
 
   if (!user) return null;
