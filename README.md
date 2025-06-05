@@ -27,7 +27,7 @@ npm install
 
 2. Create `.env` file in `backend` directory:
 ```sh
-PORT=5000
+PORT=backend_port
 DB_URL=your_mongodb_connection_string
 JWT_SECRET=your_jwt_secret_key
 JWT_TIMEOUT=1h
@@ -51,7 +51,7 @@ npm install
 2. Create `.env` file in `frontend` directory:
 ```sh
 VITE_GOOGLE_CLIENT_ID=your_google_client_id
-VITE_Server_URL=http://localhost:5000
+VITE_Server_URL=http://localhost:backend_port
 ```
 
 3. Start the frontend development server:
