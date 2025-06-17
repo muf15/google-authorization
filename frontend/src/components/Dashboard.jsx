@@ -1,38 +1,8 @@
-import React, { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { api } from "../api";
+import React from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Dashboard() {
-  const [user, setUser] = useState(null);
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await api.get("/auth/me");
-        if (response.data.success) {
-          setUser(response.data.user);
-        } else {
-          navigate("/login");
-        }
-      } catch (error) {
-        console.error("Error fetching user:", error);
-        navigate("/login");
-      }
-    };
-
-    fetchUser();
-  }, [navigate]);
-
-  const handleLogout = async () => {
-    try {
-      // Add a logout API call here that clears the cookie
-      await api.post("/auth/logout");
-      navigate("/login");
-    } catch (error) {
-      console.error("Logout error:", error);
-    }
-  };
+  const { user, logout } = useAuth();
 
   if (!user) return null;
 
@@ -49,13 +19,15 @@ export default function Dashboard() {
                     alt={user.name}
                     className="w-24 h-24 rounded-full border-2 border-gray-300"
                   />
-                  <h1 className="text-2xl font-bold text-gray-900">
-                    {user.name}
-                  </h1>
-                  <p className="text-gray-600">{user.email}</p>
+                  <div className="text-center">
+                    <h2 className="text-2xl font-bold text-gray-900">
+                      {user.name}
+                    </h2>
+                    <p className="text-gray-500">{user.email}</p>
+                  </div>
                   <button
-                    onClick={handleLogout}
-                    className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 transition-colors"
+                    onClick={logout}
+                    className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors"
                   >
                     Logout
                   </button>
