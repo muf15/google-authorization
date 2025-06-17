@@ -3,37 +3,75 @@ const User = require("../models/userModel");
 
 const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.cookies.token;
+    const { accessToken } = req.cookies;
 
-    if (!token) {
+    if (!accessToken) {
       return res.status(401).json({
         success: false,
-        message: "Not authorized, no token",
+        message: "Access token not found",
       });
     }
 
-    // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    try {
+      // Verify access token
+      const decoded = jwt.verify(accessToken, process.env.JWT_SECRET);
 
-    // Get user from the token
-    const user = await User.findById(decoded._id).select("-__v");
+      // Find user
+      const user = await User.findById(decoded.userId);
 
-    if (!user) {
-      return res.status(401).json({
-        success: false,
-        message: "User not found",
-      });
+      if (!user || !user.isActive) {
+        return res.status(401).json({
+          success: false,
+          message: "User not found or inactive",
+        });
+      }
+
+      // Attach user to request object
+      req.user = user;
+      next();
+    } catch (error) {
+      // If access token is expired, client should use refresh token endpoint
+      if (error.name === "TokenExpiredError") {
+        return res.status(401).json({
+          success: false,
+          message: "Access token expired",
+          code: "TOKEN_EXPIRED",
+        });
+      }
+
+      throw error;
     }
-
-    // Attach user to request object
-    req.user = user;
-    next();
   } catch (error) {
+    console.error("Auth middleware error:", error);
     return res.status(401).json({
       success: false,
-      message: "Not authorized, token failed",
+      message: "Authentication failed",
     });
   }
 };
 
-module.exports = { authMiddleware };
+// Middleware for role-based access control
+const requireRole = (roles) => {
+  return (req, res, next) => {
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: "Authentication required",
+      });
+    }
+
+    if (!roles.includes(req.user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "Insufficient permissions",
+      });
+    }
+
+    next();
+  };
+};
+
+module.exports = {
+  authMiddleware,
+  requireRole,
+};
